@@ -23,8 +23,14 @@ export default function RootLayout({ children }) {
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         {children}
-        <div className="pointer-events-none fixed bottom-3 left-1/2 -translate-x-1/2 select-none text-xs font-medium tracking-wide text-zinc-900/40">
-          teacups
+        <div
+          className="pointer-events-none fixed bottom-3 left-1/2 -translate-x-1/2 select-none rounded-full border border-white/40 bg-white/35 px-3 py-1 text-xs shadow-sm backdrop-blur"
+          aria-hidden="true"
+        >
+          <span className="text-zinc-700/70">Powered by </span>
+          <span className="bg-gradient-to-r from-orange-700 via-amber-600 to-yellow-500 bg-clip-text font-semibold tracking-wide text-transparent">
+            Teacups
+          </span>
         </div>
       </body>
     </html>
