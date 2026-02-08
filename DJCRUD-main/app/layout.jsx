@@ -23,6 +23,9 @@ export default function RootLayout({ children }) {
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         {children}
+        <div className="pointer-events-none fixed bottom-3 left-1/2 -translate-x-1/2 select-none text-xs font-medium tracking-wide text-zinc-900/40">
+          teacups
+        </div>
       </body>
     </html>
   );

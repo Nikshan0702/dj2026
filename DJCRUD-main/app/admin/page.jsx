@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 function Toast({ toast, onClose }) {
   if (!toast) return null;
@@ -78,18 +78,26 @@ export default function AdminPage() {
   const [keyInput, setKeyInput] = useState("");
   const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
   const [toast, setToast] = useState(null);
   const [query, setQuery] = useState("");
   const [sortDir, setSortDir] = useState("desc"); // newest first by default
+  const inFlightRef = useRef(false);
+  const hasLoadedRef = useRef(false);
 
   useEffect(() => {
     const existing = sessionStorage.getItem("adminKey") || "";
     if (existing) setAdminKey(existing);
   }, []);
 
-  const loadRequests = useCallback(async (key) => {
-    setToast(null);
-    setLoading(true);
+  const loadRequests = useCallback(async (key, opts = {}) => {
+    const { background = false, clearToast = true } = opts;
+    if (inFlightRef.current) return;
+    inFlightRef.current = true;
+
+    if (clearToast) setToast(null);
+    if (background && hasLoadedRef.current) setRefreshing(true);
+    else setLoading(true);
     try {
       const res = await fetch("/api/requests", {
         headers: { "x-admin-key": key },
@@ -117,6 +125,7 @@ export default function AdminPage() {
       }
 
       setRequests(Array.isArray(data.requests) ? data.requests : []);
+      hasLoadedRef.current = true;
     } catch {
       setToast({
         type: "error",
@@ -124,12 +133,23 @@ export default function AdminPage() {
       });
     } finally {
       setLoading(false);
+      setRefreshing(false);
+      inFlightRef.current = false;
     }
   }, []);
 
   useEffect(() => {
     if (!adminKey) return;
     loadRequests(adminKey);
+  }, [adminKey, loadRequests]);
+
+  useEffect(() => {
+    if (!adminKey) return;
+    const id = window.setInterval(() => {
+      if (document.hidden) return;
+      loadRequests(adminKey, { background: true, clearToast: false });
+    }, 10_000);
+    return () => window.clearInterval(id);
   }, [adminKey, loadRequests]);
 
   const filtered = useMemo(() => {
@@ -292,6 +312,10 @@ export default function AdminPage() {
                     className="w-full rounded-xl border border-zinc-200 bg-white px-3.5 py-2.5 text-sm text-zinc-900 shadow-sm outline-none placeholder:text-zinc-400 focus:border-zinc-300 focus:ring-4 focus:ring-amber-100"
                     disabled={loading}
                   />
+                  <div className="mt-2 flex items-center justify-between text-xs text-zinc-500">
+                    <span>Auto-refresh: every 10s</span>
+                    {refreshing ? <span>Refreshing…</span> : <span />}
+                  </div>
                 </div>
 
                 <button
